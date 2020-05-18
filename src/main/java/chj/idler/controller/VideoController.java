@@ -18,16 +18,17 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @CrossOrigin(allowCredentials="true", allowedHeaders = "*")
 @Controller
 @RequestMapping(value = "/video")
-public class VideoController {
+public class VideoController extends BaseController {
 
     @Autowired
     private VideoService videoService;
 
     @ResponseBody
-    @RequestMapping(value="/add")
-    public CommonReturnType addWatching(@RequestParam(name="url")String url)throws BusinessException {
+    @RequestMapping(value="/search")
+    public CommonReturnType search(@RequestParam(name="url")String url)throws BusinessException {
+
         VideoModel videoModel=videoService.analyseURL(url);
-        if(videoModel==null||videoModel.getEpisodes().size()==0)throw new BusinessException(EmBusinessError.URL_ERROR,"此视频暂未上线");
+        if(videoModel==null)throw new BusinessException(EmBusinessError.UNKNOWN_ERROR,"暂不支持该网址");
         return  CommonReturnType.create(convertToVideoVO(videoModel));
     }
 
@@ -37,4 +38,6 @@ public class VideoController {
         BeanUtils.copyProperties(videoModel,videoVO);
         return videoVO;
     }
+
+
 }

@@ -1,33 +1,52 @@
 package chj.idler.service.model;
 
+import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
+import org.joda.time.LocalTime;
 import us.codecraft.webmagic.model.annotation.ExtractBy;
 import us.codecraft.webmagic.model.annotation.TargetUrl;
 
+import java.util.List;
 import java.util.TreeMap;
 
 public class VideoModel {
-
-    private String img;
+    private Integer id;
+    //视频名称
     private String name;
-    private Integer total;
+    //视频别名
+    private String name2;
+    //视频图片
+    private String image;
+    //当前第几集
+    private Integer now;
+    //是否完结
     private boolean end;
-    
-    public boolean isEnd() {
-        return end;
+    //0正常，1预告，2vip
+    private Integer status;
+    //附加描述
+    private String sub;
+    //简介
+    private String description;
+    //视频来源，0未知，腾讯，爱奇艺，优酷
+    private String source;
+    //类型，电视剧，动漫，综艺
+    private String type;
+    private String url;
+
+    public String getUrl() {
+        return url;
     }
 
-    public void setEnd(boolean end) {
-        this.end = end;
+    public void setUrl(String url) {
+        this.url = url;
     }
 
-    private TreeMap<String, EpisodeModel> episodes=new TreeMap<String , EpisodeModel>();
-
-    public String getImg() {
-        return img;
+    public Integer getId() {
+        return id;
     }
 
-    public void setImg(String img) {
-        this.img = img;
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -38,20 +57,75 @@ public class VideoModel {
         this.name = name;
     }
 
-    public Integer getTotal() {
-        return total;
+    public String getName2() {
+        return name2;
     }
 
-    public void setTotal(Integer total) {
-        this.total = total;
+    public void setName2(String name2) {
+        this.name2 = name2;
     }
 
-    public TreeMap<String, EpisodeModel> getEpisodes() {
-        return episodes;
+    public String getImage() {
+        return image;
     }
 
-    public void addEpisode(String eid,EpisodeModel episodeModel) {
-        this.episodes.put(eid,episodeModel);
+    public void setImage(String image) {
+        this.image = image;
     }
 
+    public Integer getNow() {
+        return now;
+    }
+
+    public void setNow(Integer now) {
+        this.now = now;
+    }
+
+    public boolean isEnd() {
+        return end;
+    }
+
+    public void setEnd(boolean end) {
+        this.end = end;
+    }
+
+    public String getSub() {
+        return sub;
+    }
+
+    public void setSub(String sub) {
+        this.sub = sub;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
 }
