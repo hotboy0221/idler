@@ -1,11 +1,17 @@
 package chj.idler;
 
 import chj.idler.controller.VideoController;
+import chj.idler.dao.UserDOMapper;
+import chj.idler.dataobject.UserDO;
 import chj.idler.response.BusinessException;
+import chj.idler.response.EmBusinessError;
+import chj.idler.service.VideoService;
 import chj.idler.service.spider.iqiyi.IqiyiVideoProcessor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.pipeline.FilePipeline;
 
@@ -20,34 +26,29 @@ import java.util.regex.Pattern;
 class SpiderTest {
     @Autowired
     private VideoController videoController;
+    @Autowired
+    private UserDOMapper userDOMapper;
     @Test
     void main(){
+
 
     }
 
     @Test
     void main2()throws BusinessException {
+        long t1=System.currentTimeMillis();
         videoController.search("https://v.qq.com/x/cover/m441e3rjq9kwpsc/h0025iluh3s.html");
+        long t2=System.currentTimeMillis();
+        System.out.println(t2-t1);
+        System.out.println((t2-t1)/1000);
     }
 
     @Test
     void main3(){
-        String s="<span class=\"content\"><em class=\"hl\">狐狸的夏天第</em>2<em class=\"hl\">季</em>  <em class=\"hl\">狐狸的夏天第二季</em>  谎言女友</span>";
-        Pattern p=Pattern.compile("<[^>*]>");
-        Matcher m=p.matcher(s);
-        if(m.find()){
-            for(int i=0;i<m.groupCount();i++)
-                System.out.println(m.group(i));
-        }
+
     }
     @Test
     void main4()throws BusinessException{
-        long a=System.currentTimeMillis();
-//        Spider.create(new TencentVideoProcessor()).addUrl("https://v.qq.com/x/cover/otff8quzy6b2dlw.html").thread(1).run();
-        System.out.println(videoController.search("https://v.qq.com/x/cover/mzc00200k12f5gi.html"));
-//        Spider.create(new TencentVideoProcessor()).addUrl("https://v.qq.com/x/cover/a7red88y4nwhbka.html").thread(1).run();
-        long b=System.currentTimeMillis();
-        System.out.println(b-a);
     }
 
 

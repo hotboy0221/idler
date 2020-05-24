@@ -1,13 +1,19 @@
 package chj.idler;
 
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
+@MapperScan("chj.idler.dao")
 public class IdlerApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(IdlerApplication.class, args);
+//        try {
+            SpringApplication.run(IdlerApplication.class, args);
+//        }catch (Exception e){
+//            System.out.println(e);
+//        }
     }
 
 }

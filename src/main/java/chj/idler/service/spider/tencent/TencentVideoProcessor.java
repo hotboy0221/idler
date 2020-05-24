@@ -1,130 +1,118 @@
 package chj.idler.service.spider.tencent;
 
+import chj.idler.dao.EpisodeDOMapper;
+import chj.idler.dao.VideoDOMapper;
+import chj.idler.dataobject.EpisodeDO;
+import chj.idler.dataobject.VideoDO;
 import chj.idler.response.BusinessException;
 import chj.idler.response.EmBusinessError;
 import chj.idler.service.model.VideoModel;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
+import us.codecraft.webmagic.processor.PageProcessor;
 import us.codecraft.webmagic.selector.Selectable;
 
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class TencentVideoProcessor extends TencentProcessor  {
+public class TencentVideoProcessor implements PageProcessor {
+
+    private static final String URL_WATCH="https://v\\.qq\\.com/x/cover/.+\\.html.*";
+    private static final String URL_DETAIL="https://v\\.qq\\.com/detail/.+";
+    private static final String URL_EPISODES="https://s\\.video\\.qq\\.com/get_playsource?.+";
+    protected VideoModel videoModel = new VideoModel();
+    protected Site site = Site
+            .me()
+            .setDomain("v.qq.com")
+            .setUserAgent(
+                    "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36");
+
+
+    public VideoModel getVideoModel() {
+        return videoModel;
+    }
 
 
     @Override
     public void process(Page page){
         //先进入视频链接获取名称再进入搜索获取视频信息
         if (page.getUrl().regex(URL_WATCH).match()) {
-            setName(page.getHtml().xpath("//h2[@class='player_title']/a/text()"));
-            page.addTargetRequest("https://v.qq.com/x/search/?q="+videoModel.getName());
-        } else if (page.getUrl().regex(URL_SEARCH).match()) {
-            Selectable infoNode=page.getHtml().xpath(INFO).nodes().get(0);
-            if(!checkName(infoNode))return;
-            setSub(infoNode);
-            setType(infoNode);
-            setName2(infoNode);
-            setDescription(infoNode);
-            setImage(infoNode);
-            if(!setNow(infoNode))return;
-            if(!setEpisode(page.getHtml().xpath(EPISODES).nodes().get(0)))return;
-            setSource(page.getHtml().xpath(SOURCE));
-        }
-    }
+            videoModel.setDetailUrl("https://v.qq.com"+page.getHtml().xpath("//h2[@class='player_title']/a/@href").get());
+        } else if (page.getUrl().regex(URL_EPISODES).match()) {
+            String[] videoList=page.getRawText().split("<videoPlayList>");
+            /*          type    payType
+            *  付费       1       1
+            *  预告       2       0
+            *  普通       1       0
+            */
+            Pattern payTypePat=Pattern.compile("<payType>([\\d])</payType>");
+            Pattern typePat=Pattern.compile("<type>([\\d])</type></videoPlayList>");
+            Pattern picPat=Pattern.compile("<pic>(.*)</pic>");
+            Pattern playUrlPat=Pattern.compile("<playUrl>(.*)</playUrl>");
+            Pattern titlePat=Pattern.compile("<title>(.*)</title>");
+            Pattern episodeNumberPat=Pattern.compile("<episode_number>([\\d]+)</episode_number>");
 
-    private boolean setName(Selectable node){
-        videoModel.setName(node.get());
-        return true;
-    }
-    private boolean checkName(Selectable node){
-        if(!StringUtils.equals(node.xpath(NAME).get(),videoModel.getName())){
-            videoModel=null;
-            return false;
-        }
-        return true;
-    }
-    private boolean setName2(Selectable node) {
-        StringBuilder sb=new StringBuilder();
-        String str=node.xpath(NAME2).get();
-        Pattern p=Pattern.compile(">([^<]*)<");
-        while(!StringUtils.isEmpty(str)){
-            Matcher m=p.matcher(str);
-            if(m.find()){
-                str=str.substring(m.start(1));
-                sb.append(m.group(1));
-            }else{
-                break;
+            Matcher payType=payTypePat.matcher(videoList[1]);
+            Matcher type=typePat.matcher(videoList[1]);
+            Matcher pic=picPat.matcher(videoList[1]);
+            Matcher playUrl=playUrlPat.matcher(videoList[1]);
+            Matcher title=titlePat.matcher(videoList[1]);
+            Matcher episodeNumber=episodeNumberPat.matcher(videoList[1]);
+
+            if(payType.find()&&type.find()){
+                int t=Integer.valueOf(type.group(1));
+                int pt=Integer.valueOf(payType.group(1));
+                if(pt==1){
+                    videoModel.setStatus(new Byte("2"));
+                }else{
+                    if(t==2){
+                        videoModel.setStatus(new Byte("1"));
+                    }else{
+                        videoModel.setStatus(new Byte("0"));
+                    }
+                }
             }
+            if(pic.find())
+                videoModel.setPicture(pic.group(1));
+            if(playUrl.find())
+                videoModel.setUrl(playUrl.group(1));
+            if(title.find())
+                videoModel.setTitle(title.group(1));
+            if(episodeNumber.find())
+                videoModel.setNow(Integer.valueOf(episodeNumber.group(1)));
+        }else if(page.getUrl().regex(URL_DETAIL).match()){
+            videoModel.setDetailUrl(page.getUrl().get());
+            Selectable node=page.getHtml().xpath("//div[@class='detail_video']").nodes().get(0);
+            videoModel.setImage("http:"+page.getHtml().xpath("//img[@class='figure_pic']/@src").get());
+            videoModel.setName(node.xpath("//h1[@class='video_title_cn']/a/text()").get());
+            if("别　名:".equals(node.xpath("/div/[@class='video_type cf']/div/span[@class='type_tit']/text()").get()))
+                videoModel.setName2(node.xpath("/div/[@class='video_type cf']/div/span[@class='type_txt']/text()").get());
+            videoModel.setType(node.xpath("//h1[@class='video_title_cn']/span[@class='type']/text()").get());
+            videoModel.setSource(new Byte("1"));
+            String score=node.xpath("//span[@class='score']/text()").get();
+            if(!StringUtils.isEmpty(score))
+                videoModel.setScore(Double.valueOf(score));
+            List<String> tags=node.xpath("//div[@class='video_tag cf']/div[@class='tag_list']/a/text()").all();
+            StringBuilder sb=new StringBuilder();
+            for(int i=0;i<tags.size();i++){
+                if(i!=0)sb.append("/");
+                sb.append(tags.get(i));
+            }
+            videoModel.setTags(sb.toString());
+            videoModel.setFinish(node.get().matches("总集数")?new Byte("1"):new Byte("0"));
+            videoModel.setDescription(node.xpath("//div[@class='video_desc']/span[@class='desc_txt']/span/text()").get());
         }
-        videoModel.setName2(sb.toString());
-        return true;
-    }
-    private boolean setImage(Selectable node){
-        videoModel.setImage("http:"+node.xpath(IMAGE).get());
-        return true;
-    }
-    private boolean setNow(Selectable node){
-        String current=node.xpath(NOW).get();
-        Matcher matcher1=Pattern.compile("更新至(\\d+)集").matcher(current);
-        Matcher matcher2=Pattern.compile("全(\\d+)集").matcher(current);
-        if(matcher1.find()) {
-            videoModel.setNow(Integer.valueOf(matcher1.group(1)));
-            videoModel.setEnd(false);
-        }else if(matcher2.find()){
-            videoModel.setNow(Integer.valueOf(matcher2.group(1)));
-            videoModel.setEnd(true);
-        }else {
-            videoModel=null;
-            return false;
-        }
-        return true;
-    }
-
-    private boolean setEpisode(Selectable node){
-        List<Selectable> episodes=node.xpath("/div/div[@class='item']").nodes();
-        //最新一集
-        Selectable episode=episodes.get(episodes.size()-1);
-        //防止最后一个标签是折叠
-        for(int i=episodes.size()-2;StringUtils.contains(episode.toString(),"item_fold")&&i>=0;i--){
-            episode=episodes.get(i);
-        }
-        String url=episode.xpath("/div/a/@href").get();
-        if(StringUtils.isEmpty(url)){
-            videoModel=null;
-            return false;
-        }
-        videoModel.setUrl(url);
-        String status=episode.xpath("/div/span[@class='mark_v']/img/@src").get();
-        if(StringUtils.isEmpty(status))videoModel.setStatus(0);
-        else if(StringUtils.contains(status,"yu"))videoModel.setStatus(1);
-        else if(StringUtils.contains(status,"vip"))videoModel.setStatus(2);
-//        videoModel.setNow(Integer.valueOf(episode.xpath("/div/a/text()").get()));
-        return true;
-    }
-    private boolean setSub(Selectable node){
-        videoModel.setSub(StringUtils.trim(node.xpath(SUB).get()));
-        return true;
-    }
-    private boolean setDescription(Selectable node){
-        videoModel.setDescription(node.xpath(DESCRIPTION).get());
-        return true;
-    }
-    private boolean setSource(Selectable node){
-        videoModel.setSource(node.get());
-        return true;
-    }
-    private boolean setType(Selectable node){
-        videoModel.setType(node.xpath(TYPE).get());
-        return true;
     }
 
     @Override
     public Site getSite() {
         return site;
     }
+
 
 
 }

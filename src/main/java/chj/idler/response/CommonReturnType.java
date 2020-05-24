@@ -2,21 +2,21 @@ package chj.idler.response;
 
 public class CommonReturnType {
     private Object data;
-    private String status;
+    private Boolean succeed;
 
-    public CommonReturnType(Object data, String status) {
+    public CommonReturnType(Object data, Boolean succeed) {
         this.data = data;
-        this.status = status;
+        this.succeed = succeed;
     }
     public CommonReturnType(){
 
     }
 
     public static CommonReturnType create(Object data){
-        return create(data,"success");
+        return create(data,true);
     }
-    public static CommonReturnType create(Object data,String status){
-        return new CommonReturnType(data,status);
+    public static CommonReturnType create(Object data,Boolean succeed){
+        return new CommonReturnType(data,succeed);
     }
 
     public Object getData() {
@@ -27,11 +27,20 @@ public class CommonReturnType {
         this.data = data;
     }
 
-    public String getStatus() {
-        return status;
+
+    public Boolean getSucceed() {
+        return succeed;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setSucceed(Boolean succeed) {
+        this.succeed = succeed;
+    }
+
+    @Override
+    public String toString() {
+        return "CommonReturnType{" +
+                "data=" + data +
+                ", succeed='" + succeed + '\'' +
+                '}';
     }
 }
