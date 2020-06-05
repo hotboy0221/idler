@@ -17,11 +17,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-@ControllerAdvice
+@ControllerAdvice(basePackages = "chj.idler")
 public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseBody
     public CommonReturnType doError(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Exception ex) {
+        System.out.println(2);
         Map<String,Object> responseData = new HashMap<>();
         if( ex instanceof BusinessException){
             BusinessException businessException = (BusinessException)ex;
@@ -34,6 +35,7 @@ public class GlobalExceptionHandler {
             responseData.put("errCode",EmBusinessError.UNKNOWN_ERROR.getErrCode());
             responseData.put("errMsg","没有找到对应的访问路径");
         }else{
+            ex.printStackTrace();
             responseData.put("errCode", EmBusinessError.UNKNOWN_ERROR.getErrCode());
             responseData.put("errMsg",EmBusinessError.UNKNOWN_ERROR.getErrMsg());
         }

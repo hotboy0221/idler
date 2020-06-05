@@ -9,11 +9,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class IdlerApplication {
 
     public static void main(String[] args) {
-//        try {
+        try {
             SpringApplication.run(IdlerApplication.class, args);
-//        }catch (Exception e){
-//            System.out.println(e);
-//        }
+        }catch (Exception e){
+        e.printStackTrace();
+         }
     }
 
 }

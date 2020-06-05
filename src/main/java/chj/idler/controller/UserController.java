@@ -3,9 +3,12 @@ package chj.idler.controller;
 import chj.idler.controller.viewobject.UserVO;
 import chj.idler.response.BusinessException;
 import chj.idler.response.CommonReturnType;
+import chj.idler.response.EmBusinessError;
+import chj.idler.rocketmq.MqProducer;
 import chj.idler.service.UserService;
 import chj.idler.service.model.UserModel;
-import org.apache.commons.lang3.StringUtils;
+import chj.idler.util.JedisClusterUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -25,12 +28,17 @@ public class UserController extends BaseController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private MqProducer mqProducer;
     @ResponseBody
     @RequestMapping(value = "/login", method = RequestMethod.POST, consumes = CONTENT_TYPE_FORMED)
     public CommonReturnType login(@RequestParam(name = "username") String username,
-                                  @RequestParam(name = "password") String password) throws BusinessException,NoSuchAlgorithmException, UnsupportedEncodingException{
+                                  @RequestParam(name = "password") String password) throws BusinessException,NoSuchAlgorithmException, UnsupportedEncodingException, JsonProcessingException {
         UserModel userModel=userService.login(username,EncodeByMd5(password));
         String token= UUID.randomUUID().toString().replace("-","");
+        JedisClusterUtil.setAndExpire(token,userModel,600);
+
+
         return CommonReturnType.create(token);
     }
 
@@ -38,14 +46,30 @@ public class UserController extends BaseController {
     @RequestMapping(value = "/register", method = RequestMethod.POST, consumes = CONTENT_TYPE_FORMED)
     public CommonReturnType register(@RequestParam(name = "username") String username,
                                      @RequestParam(name = "password") String password,
-                                     @RequestParam(name = "email") String email) throws BusinessException,NoSuchAlgorithmException, UnsupportedEncodingException{
+                                     @RequestParam(name = "email") String email) throws Exception{
 
         UserModel userModel=new UserModel();
         userModel.setUsername(username);
         userModel.setPassword(EncodeByMd5(password));
         userModel.setEmail(email);
 //        userModel.setTelephone(telephone);
+        String registerToken= "register:"+UUID.randomUUID().toString().replace("-","");
+        //将来需用lua脚本保证原子性
+        JedisClusterUtil.set(registerToken,userModel);
+        JedisClusterUtil.expire(registerToken,300);
+        mqProducer.registerMail(registerToken,userModel);
+        return CommonReturnType.create(null);
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/register", method = RequestMethod.GET)
+    public CommonReturnType confirm(@RequestParam(name = "token") String token) throws JsonProcessingException,BusinessException,NoSuchAlgorithmException, UnsupportedEncodingException{
+        String registerToken="register:"+token;
+        UserModel userModel=JedisClusterUtil.get(registerToken,UserModel.class);
+        if(userModel==null)
+            throw new BusinessException(EmBusinessError.REGISTRATION_EXPIRE);
         userService.register(userModel);
+        JedisClusterUtil.del(registerToken);
         return CommonReturnType.create(null);
     }
 
@@ -78,10 +102,13 @@ public class UserController extends BaseController {
         return CommonReturnType.create(userVO);
     }
 
+
     private UserVO convertToUserVO(UserModel userModel){
         if(userModel==null)return null;
         UserVO userVO=new UserVO();
         BeanUtils.copyProperties(userModel,userVO);
         return userVO;
     }
+
+
 }

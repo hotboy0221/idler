@@ -35,5 +35,6 @@ public class VideoVO {
     private Integer now;
     //当前集照片
     private String picture;
-
+    //是否订阅通知
+    private Byte sub;
 }

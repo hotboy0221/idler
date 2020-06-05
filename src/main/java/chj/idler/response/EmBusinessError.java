@@ -9,7 +9,14 @@ public enum EmBusinessError implements CommonError {
     //20000开头为用户信息相关错误定义
     USER_NOT_EXIST(20001,"用户不存在"),
     USER_LOGIN_FAIL(20002,"用户名或密码不正确"),
-    USER_NOT_LOGIN(20003,"用户还未登陆"),
+    USER_NOT_LOGIN(20003,"用户未登陆"),
+    REGISTRATION_EXPIRE(20004,"注册已过期，请重新注册"),
+
+    //30000为业务错误
+    URL_NOT_SUPPORT(30001,"暂不支持此网址"),
+    VIDEO_IS_SUB(30002,"视频已订阅"),
+    VIDEO_NOT_SUB(30003,"未订阅此视频"),
+
 
     ;
 

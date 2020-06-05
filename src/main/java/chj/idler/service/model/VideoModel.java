@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class VideoModel {
     private Integer id;
+    private Integer episodeId;
     //视频名称
     private String name;
     //类型，电视剧，动漫，综艺
@@ -35,4 +36,10 @@ public class VideoModel {
     private Integer now;
     //当前集照片
     private String picture;
+    //是否订阅通知
+    private Byte sub;
+    //该集添加时间
+    private Long createTime;
+
+
 }
