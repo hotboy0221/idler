@@ -38,6 +38,7 @@ public class MqProducer {
     public void init() throws MQClientException {
         //做mq producer的初始化
         producer = new DefaultMQProducer("mail_producer_group");
+//        producer.setInstanceName("idler");
         producer.setNamesrvAddr(nameAddr);
         producer.setRetryTimesWhenSendFailed(5);
         producer.start();
@@ -59,7 +60,7 @@ public class MqProducer {
     public boolean registerMail(String registerToken,UserModel userModel)throws MQClientException,InterruptedException, RemotingException, MQBrokerException{
         Map<String,Object> map=new HashMap<>();
         map.put("registerToken",registerToken);
-        map.put("userModel",userModel);
+        map.put("userModel",JSON.toJSONString(userModel));
         Message message = new Message(mailTopic,"register", JSON.toJSONBytes(map));
         producer.send(message);
         return true;

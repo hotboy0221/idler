@@ -8,4 +8,5 @@ public interface UserService {
     UserModel getUser(Integer id)throws BusinessException;
     void register(UserModel userModel)throws BusinessException;
     void forgot(UserModel userModel)throws BusinessException;
+    void checkExist(String username,String email)throws BusinessException;
 }

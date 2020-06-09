@@ -31,6 +31,7 @@ public class TcProcessor {
          *  付费       1       1
          *  预告       2       0
          *  普通       1       0
+         *  超前点播   2       1
          */
         Matcher payType = payTypePat.matcher(videoList[1]);
         Matcher type = typePat.matcher(videoList[1]);
@@ -42,10 +43,14 @@ public class TcProcessor {
             int t = Integer.valueOf(type.group(1));
             int pt = Integer.valueOf(payType.group(1));
             if (pt == 1) {
-                videoModel.setStatus(new Byte("2"));
+                if(t==2) {
+                    videoModel.setStatus(new Byte("2"));
+                }else if(t==1) {
+                    videoModel.setStatus(new Byte("1"));
+                }
             } else {
                 if (t == 2) {
-                    videoModel.setStatus(new Byte("1"));
+                    videoModel.setStatus(new Byte("3"));
                 } else {
                     videoModel.setStatus(new Byte("0"));
                 }
@@ -68,6 +73,7 @@ public class TcProcessor {
          *  付费       1       1
          *  预告       2       0
          *  普通       1       0
+         *  超前点播   2       1
          */
         for (int i = videoList.length-1; i >0; i--) {
             Matcher payType = payTypePat.matcher(videoList[i]);
@@ -81,10 +87,14 @@ public class TcProcessor {
                 int t = Integer.valueOf(type.group(1));
                 int pt = Integer.valueOf(payType.group(1));
                 if (pt == 1) {
-                    episodeDO.setStatus(new Byte("2"));
+                    if(t==2) {
+                        episodeDO.setStatus(new Byte("2"));
+                    }else if(t==1) {
+                        episodeDO.setStatus(new Byte("1"));
+                    }
                 } else {
                     if (t == 2) {
-                        episodeDO.setStatus(new Byte("1"));
+                        episodeDO.setStatus(new Byte("3"));
                     } else {
                         episodeDO.setStatus(new Byte("0"));
                     }

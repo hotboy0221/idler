@@ -6,6 +6,7 @@ import chj.idler.response.BusinessException;
 import chj.idler.response.EmBusinessError;
 import chj.idler.service.UserService;
 import chj.idler.service.model.UserModel;
+import chj.idler.util.JedisClusterUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,11 +43,19 @@ public class UserServiceImpl implements UserService {
     public void register(UserModel userModel) throws BusinessException {
         registerValidator(userModel);
         UserDO userDO = convertToUserDO(userModel);
-        if(userDOMapper.selectByEmail(userModel.getEmail())!=null)
-            throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"邮箱已被注册");
-        if(userDOMapper.selectByUsername(userModel.getUsername())!=null)
-            throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"用户名已被注册");
+
         if( userDOMapper.insertSelective(userDO)==0)throw new BusinessException(EmBusinessError.UNKNOWN_ERROR,"注册失败");
+    }
+
+    public void checkExist(String username,String email)throws BusinessException{
+        if(JedisClusterUtil.get(email)!=null)
+            throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"邮箱已被注册");
+        if(JedisClusterUtil.get(username)!=null)
+            throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"用户名已被注册");
+        if(userDOMapper.selectByEmail(email)!=null)
+            throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"邮箱已被注册");
+        if(userDOMapper.selectByUsername(username)!=null)
+            throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"用户名已被注册");
     }
 
     @Override

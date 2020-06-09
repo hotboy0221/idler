@@ -13,7 +13,7 @@ public interface VideoService {
     VideoModel analyseURL(String url)throws BusinessException, JsonProcessingException, MQClientException,InterruptedException, RemotingException, MQBrokerException;
     List<VideoModel> getVideoList(Integer userId) ;
     List<VideoModel> selectAllVideoNewest() ;
-    void updateEpisodes();
+    void updateEpisodes()throws MQClientException,InterruptedException, RemotingException, MQBrokerException;
     List<String> selectSubEmails(Integer videoId);
     void episodesSpider(VideoModel videoModel);
 }

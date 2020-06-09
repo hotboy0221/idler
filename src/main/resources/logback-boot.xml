@@ -30,29 +30,9 @@
     <!-- 指定项目中某个包，当有日志操作行为时的日志记录级别 -->
     <!-- chj.idler为根包，也就是只要是发生在这个根包下面的所有日志操作行为的权限都是DEBUG -->
     <!-- 级别依次为【从高到低】：FATAL > ERROR > WARN > INFO > DEBUG > TRACE  -->
+
+
     <logger name="chj.idler" level="DEBUG">
         <appender-ref ref="syslog" />
-        <appender-ref ref="mqAppender1" />
     </logger>
-
-    <appender name="mqAppender1" class="org.apache.rocketmq.logappender.logback.RocketmqLogbackAppender">
-        <File>log/rocketmq.log</File>
-        <tag>*</tag>
-        <topic>mail</topic>
-        <producerGroup>mail_producer_group</producerGroup>
-        <nameServerAddress>192.168.124.25:9876;192.168.124.23:9876</nameServerAddress>
-        <layout>
-            <pattern>%date %p %t - %m%n</pattern>
-        </layout>
-    </appender>
-
-    <appender name="mqAsyncAppender1" class="ch.qos.logback.classic.AsyncAppender">
-        <queueSize>1024</queueSize>
-        <discardingThreshold>80</discardingThreshold>
-        <maxFlushTime>2000</maxFlushTime>
-        <neverBlock>true</neverBlock>
-        <appender-ref ref="mqAppender1"/>
-    </appender>
-
-
 </configuration>

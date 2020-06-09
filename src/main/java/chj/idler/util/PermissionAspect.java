@@ -15,15 +15,18 @@ import javax.servlet.http.HttpServletRequest;
 
 @Aspect
 @Component
-public class VerifyAspect {
-    @Pointcut(value = "execution(* chj.idler.controller..VideoController.*(..))")
-    public void loginVerify(){};
+public class PermissionAspect {
+//    @Pointcut(value = "execution(* chj.idler.controller..VideoController.*(..))")
+//    public void loginVerify(){};
 
-    @Before(value = "loginVerify()")
+    @Pointcut(value="@annotation(chj.idler.annotation.ValidatePermission)")
+    public void permissonCut(){};
+
+    @Before(value = "permissonCut()")
     public void beforeVideo()throws BusinessException, JsonProcessingException {
         ServletRequestAttributes attributes=(ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         HttpServletRequest request=attributes.getRequest();
-        String token=request.getParameter("token");
+        String token=request.getHeader("token");
         if(StringUtils.isEmpty(token)||StringUtils.isEmpty(JedisClusterUtil.get(token)))throw new BusinessException(EmBusinessError.USER_NOT_LOGIN);
         JedisClusterUtil.expire(token,600);
     }

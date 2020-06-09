@@ -40,12 +40,12 @@ class SpiderTest {
         VideoModel videoModel=new VideoModel();
         videoModel.setName("哈哈1");
         videoModel.setId(100186);
-        mqProducer.newVideoNotify(videoModel);
+
         Thread.sleep(20000);
     }
 
     @Test
-    void main2()throws BusinessException {
+    void main2()throws Exception {
         long t1=System.currentTimeMillis();
         videoController.search("https://v.qq.com/x/cover/ipmc5u3dwb48mv2/f0020pa88so.html");
         long t2=System.currentTimeMillis();

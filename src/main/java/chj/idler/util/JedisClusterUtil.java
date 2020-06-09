@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.params.SetParams;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -40,12 +41,18 @@ public class JedisClusterUtil {
         result=jedisCluster.set(key, objectMapper.writeValueAsString(value));
         return result;
     }
-    public  static void setAndExpire(String key,Object value,int seconds)throws JsonProcessingException{
-        if(key==null)return ;
+    public static Long setnx(String key,Object value)throws JsonProcessingException{
+        if(key==null)return null;
+        Long result;
+        result=jedisCluster.setnx(key, objectMapper.writeValueAsString(value));
+        return result;
+    }
+    public  static String setAndExpire(String key,Object value,int seconds)throws JsonProcessingException{
+        if(key==null)return null;
         String result;
         //非原子性
-        jedisCluster.set(key, objectMapper.writeValueAsString(value));
-        jedisCluster.expire(key,seconds);
+        result=jedisCluster.set(key, objectMapper.writeValueAsString(value), SetParams.setParams().nx().ex(seconds));
+        return result;
     }
     public static String get(String key) {
         if(key==null)return null;
@@ -94,6 +101,7 @@ public class JedisClusterUtil {
         T result=objectMapper.readValue(value,tClass);
         return result;
     }
+
 
 //    public static JedisCluster getCluster() {
 //        return jedisCluster;

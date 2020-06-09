@@ -179,67 +179,7 @@
     where id = #{id,jdbcType=INTEGER}
   </update>
 
-  <insert id="insertSelectiveDup" parameterType="chj.idler.dataobject.EpisodeDO">
-    insert into episode
-    <trim prefix="(" suffix=")" suffixOverrides=",">
-      <if test="id != null">
-        id,
-      </if>
-      <if test="title != null">
-        title,
-      </if>
-      <if test="url != null">
-        url,
-      </if>
-      <if test="status != null">
-        status,
-      </if>
-      <if test="videoId != null">
-        video_id,
-      </if>
-      <if test="now != null">
-        now,
-      </if>
-      <if test="finish != null">
-        finish,
-      </if>
-      <if test="picture != null">
-        picture,
-      </if>
-      <if test="createTime != null">
-        create_time,
-      </if>
-    </trim>
-    <trim prefix="values (" suffix=")" suffixOverrides=",">
-      <if test="id != null">
-        #{id,jdbcType=INTEGER},
-      </if>
-      <if test="title != null">
-        #{title,jdbcType=VARCHAR},
-      </if>
-      <if test="url != null">
-        #{url,jdbcType=VARCHAR},
-      </if>
-      <if test="status != null">
-        #{status,jdbcType=TINYINT},
-      </if>
-      <if test="videoId != null">
-        #{videoId,jdbcType=INTEGER},
-      </if>
-      <if test="now != null">
-        #{now,jdbcType=INTEGER},
-      </if>
-      <if test="finish != null">
-        #{finish,jdbcType=TINYINT},
-      </if>
-      <if test="picture != null">
-        #{picture,jdbcType=VARCHAR},
-      </if>
-      <if test="createTime != null">
-        #{create_time,jdbcType=BIGINT},
-      </if>
-    </trim>
-  </insert>
+
 
   <insert id="insertSelectiveDup" parameterType="chj.idler.dataobject.EpisodeDO">
     insert into episode
@@ -298,13 +238,13 @@
         #{picture,jdbcType=VARCHAR},
       </if>
       <if test="createTime != null">
-        #{create_time,jdbcType=BIGINT},
+        #{createTime,jdbcType=BIGINT},
       </if>
     </trim>
     on duplicate key update
     <trim suffixOverrides=",">
       <if test="title != null">
-        title = #{title,jdbcType=VARCHAR},
+        title =#{title,jdbcType=VARCHAR},
       </if>
       <if test="url != null">
         url = #{url,jdbcType=VARCHAR},
@@ -334,7 +274,8 @@
     select
      <include refid="Base_Column_List" />
      from episode where video_id=#{videoId,jdbcType=INTEGER}
-    and now =(select max(now) from episode where video_id=#{videoId,jdbcType=INTEGER});
+    and now =(select max(now) from episode where video_id=#{videoId,jdbcType=INTEGER})
+    order by status limit 1;
   </select>
 
   <update id="setFinished" parameterType="java.lang.Integer">

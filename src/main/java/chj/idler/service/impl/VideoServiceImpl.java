@@ -126,7 +126,7 @@ public class VideoServiceImpl implements VideoService {
             episodeDOMapper.insertSelectiveDup(episodeDO);
         }
     }
-    public void updateEpisodes(){
+    public void updateEpisodes()throws MQClientException,InterruptedException, RemotingException, MQBrokerException{
             Pattern idPat = Pattern.compile("^https://v\\.qq\\.com/detail/[\\w]/(.+)\\.html$");
             //video的标识对应episode的title
             Map<String, VideoModel> videoMap = new HashMap<>();
@@ -142,21 +142,25 @@ public class VideoServiceImpl implements VideoService {
             }
             spider.thread(5).run();
             Long nowTime=System.currentTimeMillis()/1000;
+            //对比数据库和爬取结果是否一致
             for (VideoModel newVideoModel : tcNewestEpisodeProcessor.getVideoModelList()) {
                 VideoModel oldVideoModel=videoMap.get(newVideoModel.getDetailUrl());
                 newVideoModel.setCreateTime(nowTime);
-                if(oldVideoModel.getNow()==newVideoModel.getNow()){
+                if(oldVideoModel.getNow()==newVideoModel.getNow()&&oldVideoModel.getStatus()==newVideoModel.getStatus()){
                     if(nowTime-oldVideoModel.getCreateTime()>2592000){
                         episodeDOMapper.setFinished(oldVideoModel.getEpisodeId());
                     }
                     continue;
                 }
+                newVideoModel.setId(oldVideoModel.getId());
+                newVideoModel.setName(oldVideoModel.getName());
                 EpisodeDO episodeDO=convertToEpisodeDO(newVideoModel);
-                episodeDO.setVideoId(oldVideoModel.getId());
                 episodeDOMapper.insertSelective(episodeDO);
                 /*
                 *   接下来要开始通知用户了！
                 * */
+
+                mqProducer.notifyVideoMail(newVideoModel);
                 //                System.out.println(videoModel.getDetailUrl() + " " +episodeMap.get(videoModel.getDetailUrl())+" "+ videoModel.getTitle());
             }
     }
@@ -195,6 +199,7 @@ public class VideoServiceImpl implements VideoService {
         EpisodeDO episodeDO = new EpisodeDO();
         BeanUtils.copyProperties(videoModel, episodeDO);
         episodeDO.setId(videoModel.getEpisodeId());
+        episodeDO.setVideoId(videoModel.getId());
         return episodeDO;
     }
 

@@ -37,8 +37,6 @@ public class UserController extends BaseController {
         UserModel userModel=userService.login(username,EncodeByMd5(password));
         String token= UUID.randomUUID().toString().replace("-","");
         JedisClusterUtil.setAndExpire(token,userModel,600);
-
-
         return CommonReturnType.create(token);
     }
 
@@ -53,10 +51,14 @@ public class UserController extends BaseController {
         userModel.setPassword(EncodeByMd5(password));
         userModel.setEmail(email);
 //        userModel.setTelephone(telephone);
-        String registerToken= "register:"+UUID.randomUUID().toString().replace("-","");
-        //将来需用lua脚本保证原子性
-        JedisClusterUtil.set(registerToken,userModel);
-        JedisClusterUtil.expire(registerToken,300);
+        String usernameR="register:"+userModel.getUsername();
+        String emailR="register:"+userModel.getEmail();
+        userService.checkExist(usernameR,emailR);
+        JedisClusterUtil.setAndExpire(usernameR,1,300);
+        JedisClusterUtil.setAndExpire(emailR,1,300);
+        String registerToken= "register:"+username+"-"+email;
+        JedisClusterUtil.setAndExpire(registerToken,userModel,300);
+
         mqProducer.registerMail(registerToken,userModel);
         return CommonReturnType.create(null);
     }
@@ -64,7 +66,7 @@ public class UserController extends BaseController {
     @ResponseBody
     @RequestMapping(value = "/register", method = RequestMethod.GET)
     public CommonReturnType confirm(@RequestParam(name = "token") String token) throws JsonProcessingException,BusinessException,NoSuchAlgorithmException, UnsupportedEncodingException{
-        String registerToken="register:"+token;
+        String registerToken=token;
         UserModel userModel=JedisClusterUtil.get(registerToken,UserModel.class);
         if(userModel==null)
             throw new BusinessException(EmBusinessError.REGISTRATION_EXPIRE);

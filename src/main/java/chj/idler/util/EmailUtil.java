@@ -15,10 +15,9 @@ import javax.mail.internet.MimeMessage;
 public class EmailUtil {
     @Value("${spring.mail.username}")
     private String userName;
-    @Value("${spring.mail.nickname}")
-    private String nickname;
     @Value("${server.weburl}")
     private String weburl;
+    private String nickname="Idler";
     @Autowired
     private JavaMailSender mailSender;
 
@@ -27,14 +26,14 @@ public class EmailUtil {
     public void newVideoNotify(String [] toWho, VideoModel videoModel)throws MessagingException{
         StringBuilder sb=new StringBuilder();
         sb.append("<a title='点击观看' href='"+videoModel.getUrl()+"' style='color:orange;font-size:3em;display:block;'>"+videoModel.getTitle()+"</a>");
-        sb.append("<img src='"+videoModel.getPicture()+"' style='width:180px'>");
+        sb.append("<img src='"+videoModel.getPicture()+"' style='width:380px'>");
         sendHtmlMail("您追的【"+videoModel.getName()+"】更新啦！",sb.toString(),toWho);
     }
 
     public void activateUser(String registerToken, UserModel userModel)throws MessagingException{
         StringBuilder sb=new StringBuilder();
-        sb.append("<h1>尊敬"+userModel.getUsername()+"用户你好</h1>");
-        sb.append("<p>您需要进一步<a href='"+weburl+"/users/register?token="+registerToken+">点击链接</a>来激活您的账号，若非本人操作请忽略本邮件</p>");
+        sb.append("<h1>尊敬的"+userModel.getUsername()+"你好</h1>");
+        sb.append("<p>您需要在五分钟内<a style=\"color:orange;\" href=\""+weburl+"/users/register?token="+registerToken+"\">点击链接</a>来激活您的账号，若非本人操作请忽略本邮件</p>");
         sendHtmlMail("您正在进行注册",sb.toString(),new String[]{userModel.getEmail()});
     }
     public void sendHtmlMail(String subject, String content, String[] toWho) throws MessagingException{
@@ -54,7 +53,7 @@ public class EmailUtil {
 
     public void handleBasicInfo(MimeMessageHelper mimeMessageHelper,String subject,String content,String[] toWho)throws MessagingException{
             //设置发件人
-            System.out.println(nickname);
+
             mimeMessageHelper.setFrom(nickname+'<'+userName+'>');
             //设置邮件的主题
             mimeMessageHelper.setSubject(subject);

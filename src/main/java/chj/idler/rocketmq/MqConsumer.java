@@ -6,6 +6,7 @@ import chj.idler.service.model.VideoModel;
 import chj.idler.service.spider.tencent.TcAllEpisodeProcessor;
 import chj.idler.util.EmailUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
@@ -47,12 +48,13 @@ public class MqConsumer {
 
     @PostConstruct
     public void init() throws MQClientException {
-
-        consume(notifyVideoConsumer,"mail_consumer_group",mailTopic,"notifyVideo",(List<MessageExt> list, ConsumeConcurrentlyContext consumeConcurrentlyContext)-> {
-            VideoModel videoModel=JSON.parseObject(new String(list.get(0).getBody()), VideoModel.class);
+        consume(notifyVideoConsumer,"notify_consumer_group",mailTopic,"notifyVideo",(List<MessageExt> list, ConsumeConcurrentlyContext consumeConcurrentlyContext)-> {
+            VideoModel videoModel=JSON.parseObject(list.get(0).getBody(), VideoModel.class);
             List<String> mails=videoService.selectSubEmails(videoModel.getId());
+
             try {
-                emailUtil.newVideoNotify((String[]) mails.toArray(), videoModel);
+                if(mails.size()>0)
+                emailUtil.newVideoNotify( mails.toArray(new String[mails.size()]), videoModel);
             }catch (MessagingException e){
                 return ConsumeConcurrentlyStatus.RECONSUME_LATER;
             }
@@ -60,11 +62,13 @@ public class MqConsumer {
                 }
         );
 
-        consume(registerConsumer,"mail_consumer_group",mailTopic,"register",(List<MessageExt> list, ConsumeConcurrentlyContext consumeConcurrentlyContext)-> {
-            Map map=JSON.parseObject(list.get(0).getBody(), HashMap.class);
+        consume(registerConsumer,"register_consumer_group",mailTopic,"register",(List<MessageExt> list, ConsumeConcurrentlyContext consumeConcurrentlyContext)-> {
+
+            Map<String,Object> map=JSON.parseObject(list.get(0).getBody(), HashMap.class);
             try {
-                emailUtil.activateUser((String)map.get("registerToken"),(UserModel) map.get("userModel"));
+                emailUtil.activateUser((String)map.get("registerToken"), JSON.parseObject((String)map.get("userModel"),UserModel.class));
             }catch (MessagingException e){
+                e.printStackTrace();
                 return ConsumeConcurrentlyStatus.RECONSUME_LATER;
             }
             return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
@@ -93,6 +97,7 @@ public class MqConsumer {
 
     private void consume(DefaultMQPushConsumer consumer,String group,String topic,String tag,MessageListenerConcurrently messageListenerConcurrently)throws MQClientException{
         consumer = new DefaultMQPushConsumer(group);
+//        consumer.setInstanceName("idler");
         consumer.setNamesrvAddr(this.nameAddr);
         consumer.subscribe(topic,tag);
         consumer.registerMessageListener(messageListenerConcurrently);
