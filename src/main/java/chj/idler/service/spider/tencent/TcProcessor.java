@@ -8,7 +8,8 @@ import us.codecraft.webmagic.Site;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+//https://s.video.qq.com/get_playsource?id=mzc00200ibqz3tc&type=4&data_type=3&range=1-1500
+//data-type3倒序
 public class TcProcessor {
     public static final String URL_WATCH="^https://v\\.qq\\.com/x/cover/.+\\.html.*$";
     public static final String URL_DETAIL="^https://v\\.qq\\.com/detail/.+$";
@@ -21,7 +22,6 @@ public class TcProcessor {
     private Pattern episodeNumberPat=Pattern.compile("<episode_number>([\\d]+)</episode_number>");
     protected Site site = Site
             .me()
-            .setDomain("v.qq.com")
             .setUserAgent(
                     "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36");
 

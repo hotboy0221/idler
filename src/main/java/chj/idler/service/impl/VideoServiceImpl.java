@@ -7,11 +7,17 @@ import chj.idler.dao.VideoSubDOMapper;
 import chj.idler.dataobject.EpisodeDO;
 import chj.idler.dataobject.VideoDO;
 
+import chj.idler.response.BusinessException;
+import chj.idler.response.EmBusinessError;
 import chj.idler.rocketmq.MqProducer;
 import chj.idler.service.VideoService;
 import chj.idler.service.model.VideoModel;
+import chj.idler.service.spider.iqiyi.IqiyiAllEpisodeProcessor;
+import chj.idler.service.spider.iqiyi.IqiyiProcessor;
+import chj.idler.service.spider.iqiyi.IqiyiVideoProcessor;
 import chj.idler.service.spider.tencent.TcAllEpisodeProcessor;
 import chj.idler.service.spider.tencent.TcNewestEpisodeProcessor;
+import chj.idler.service.spider.tencent.TcProcessor;
 import chj.idler.service.spider.tencent.TcVideoProcessor;
 
 import chj.idler.util.JedisClusterUtil;
@@ -48,20 +54,19 @@ public class VideoServiceImpl implements VideoService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public VideoModel analyseURL(String url) throws JsonProcessingException,MQClientException,InterruptedException, RemotingException, MQBrokerException
-
+    public VideoModel analyseURL(String url) throws BusinessException,JsonProcessingException,MQClientException,InterruptedException, RemotingException, MQBrokerException
     {
+            VideoModel videoModel=null;
             //将来需要先从数据库爬取，新视频把爬取任务延时进行
-            if (url.matches("^https://v\\.qq\\.com/x/cover/.+\\.html.*$")) {
+            if (url.matches(TcProcessor.URL_WATCH)) {
                 //缓存是否存在，url->videoModel
-                VideoModel videoModel=JedisClusterUtil.get(url,VideoModel.class);
+                videoModel=JedisClusterUtil.get(url,VideoModel.class);
                 if(videoModel!=null)return videoModel;
                 //
-                TcVideoProcessor tencentVideoProcessor = new TcVideoProcessor();
-                Spider spider=Spider.create(tencentVideoProcessor);
+                TcVideoProcessor tcVideoProcessor = new TcVideoProcessor();
+                Spider spider=Spider.create(tcVideoProcessor);
                 spider.addUrl(url).thread(1).run();
-                videoModel = tencentVideoProcessor.getVideoModel();
-                videoModel.setUrl(url);
+                videoModel = tcVideoProcessor.getVideoModel();
                 if (!selectExistVideo(videoModel)) {
                     Pattern idPat = Pattern.compile("^https://v\\.qq\\.com/detail/[\\w]/(.+)\\.html$");
                     Matcher id = idPat.matcher(videoModel.getDetailUrl());
@@ -80,11 +85,32 @@ public class VideoServiceImpl implements VideoService {
                 }
                 JedisClusterUtil.set(url,videoModel);
                 return videoModel;
-//            }else if(url1.getHost().equals("www.iqiyi.com")){
-//                IqiyiProcessor iqiyiProcessor=new IqiyiProcessor();
-//                Spider.create(iqiyiProcessor).addUrl(url).thread(1).run();
-//                return iqiyiProcessor.getVideoModel();
-            } else return null;
+            }else if(url.matches(IqiyiProcessor.URL_WATCH)){
+                //缓存是否存在，url->videoModel
+                videoModel=JedisClusterUtil.get(url,VideoModel.class);
+                if(videoModel!=null)return videoModel;
+                //
+                IqiyiVideoProcessor iqiyiVideoProcessor=new IqiyiVideoProcessor();
+                Spider spider=Spider.create(iqiyiVideoProcessor);
+                spider.addUrl(url).thread(1).run();
+                videoModel=iqiyiVideoProcessor.getVideoModel();
+                if(videoModel==null)throw new BusinessException(EmBusinessError.URL_NOT_SUPPORT);
+                if(!selectExistVideo(videoModel)){
+                    spider.addUrl(videoModel.getDetailUrl(), iqiyiVideoProcessor.getEpisodesUrl()).thread(1).run();
+                    //先插数据库后插缓存
+                    try {
+                        insertVideoModel(videoModel);
+                    }catch (DuplicateKeyException e){
+                        Thread.sleep(100L);
+                        return analyseURL(url);
+                    }
+                    //这里extra存的是爬取episodes的接口地址
+                    videoModel.setExtra(iqiyiVideoProcessor.getEpisodesUrl());
+//                    mqProducer.collectEpisodes(videoModel);
+                }
+//                JedisClusterUtil.set(url,videoModel);
+            }
+            return videoModel;
     }
 
     @Override
@@ -114,16 +140,25 @@ public class VideoServiceImpl implements VideoService {
         return videoModelList;
     }
     public void episodesSpider(VideoModel videoModel){
-        TcAllEpisodeProcessor tcAllEpisodeProcessor=new TcAllEpisodeProcessor();
-        Pattern idPat = Pattern.compile("^https://v\\.qq\\.com/detail/[\\w]/(.+)\\.html$");
-        Matcher id = idPat.matcher(videoModel.getDetailUrl());
-        if (id.find()) {
-            String url="https://s.video.qq.com/get_playsource?type=4&data_type=3&range=1-9999&id=" + id.group(1);
-            Spider.create(tcAllEpisodeProcessor).addUrl(url).thread(1).run();
-        }
-        for (EpisodeDO episodeDO:tcAllEpisodeProcessor.getEpisodeDOList()){
-            episodeDO.setVideoId(videoModel.getId());
-            episodeDOMapper.insertSelectiveDup(episodeDO);
+        if(videoModel.getSource()==1) {
+            TcAllEpisodeProcessor tcAllEpisodeProcessor = new TcAllEpisodeProcessor();
+            Pattern idPat = Pattern.compile("^https://v\\.qq\\.com/detail/[\\w]/(.+)\\.html$");
+            Matcher id = idPat.matcher(videoModel.getDetailUrl());
+            if (id.find()) {
+                String url = "https://s.video.qq.com/get_playsource?type=4&data_type=3&range=1-9999&id=" + id.group(1);
+                Spider.create(tcAllEpisodeProcessor).addUrl(url).thread(1).run();
+            }
+            for (EpisodeDO episodeDO : tcAllEpisodeProcessor.getEpisodeDOList()) {
+                episodeDO.setVideoId(videoModel.getId());
+                episodeDOMapper.insertSelectiveDup(episodeDO);
+            }
+        }else if(videoModel.getSource()==2){
+            IqiyiAllEpisodeProcessor iqiyiAllEpisodeProcessor=new IqiyiAllEpisodeProcessor();
+            Spider.create(iqiyiAllEpisodeProcessor).addUrl((String)videoModel.getExtra()).thread(1).run();
+            for (EpisodeDO episodeDO : iqiyiAllEpisodeProcessor.getEpisodeDOList()) {
+                episodeDO.setVideoId(videoModel.getId());
+                episodeDOMapper.insertSelectiveDup(episodeDO);
+            }
         }
     }
     public void updateEpisodes()throws MQClientException,InterruptedException, RemotingException, MQBrokerException{
@@ -144,7 +179,7 @@ public class VideoServiceImpl implements VideoService {
             Long nowTime=System.currentTimeMillis()/1000;
             //对比数据库和爬取结果是否一致
             for (VideoModel newVideoModel : tcNewestEpisodeProcessor.getVideoModelList()) {
-                VideoModel oldVideoModel=videoMap.get(newVideoModel.getDetailUrl());
+                VideoModel oldVideoModel=videoMap.get(newVideoModel.getExtra());
                 newVideoModel.setCreateTime(nowTime);
                 if(oldVideoModel.getNow()==newVideoModel.getNow()&&oldVideoModel.getStatus()==newVideoModel.getStatus()){
                     if(nowTime-oldVideoModel.getCreateTime()>2592000){

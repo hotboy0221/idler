@@ -26,7 +26,7 @@ public class MySchedulerFactory extends StdSchedulerFactory implements Applicati
 
             CronTrigger trigger = newTrigger()
                     .withIdentity("videoSpiderTrigger", "group1")
-                    .withSchedule(cronSchedule("0 1 0/1 * * ?"))
+                    .withSchedule(cronSchedule("30 0 0/1 * * ?"))
                     .build();
 //            Trigger trigger = newTrigger()
 //                    .withIdentity("trigger1", "group1")
@@ -41,6 +41,6 @@ public class MySchedulerFactory extends StdSchedulerFactory implements Applicati
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-            videoSpider();
+//            videoSpider();
     }
 }

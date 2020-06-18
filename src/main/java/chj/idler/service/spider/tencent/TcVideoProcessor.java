@@ -10,7 +10,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+//一个影视的最新一集与影视信息
 public class TcVideoProcessor extends TcProcessor implements PageProcessor {
 
     private VideoModel videoModel = new VideoModel();
@@ -32,8 +32,10 @@ public class TcVideoProcessor extends TcProcessor implements PageProcessor {
             Selectable node=page.getHtml().xpath("//div[@class='detail_video']").nodes().get(0);
             videoModel.setImage("http:"+page.getHtml().xpath("//img[@class='figure_pic']/@src").get());
             videoModel.setName(node.xpath("//h1[@class='video_title_cn']/a/text()").get());
-            if("别　名:".equals(node.xpath("/div/[@class='video_type cf']/div/span[@class='type_tit']/text()").get()))
-                videoModel.setName2(node.xpath("/div/[@class='video_type cf']/div/span[@class='type_txt']/text()").get());
+            videoModel.setName2(node.xpath("/div[contains(@class,'video_type')]/div/span[@class='type_tit'][contains(text(),'别　名')]/following-sibling::span[1]/text()").get());
+            String  publishYear=node.xpath("/div[contains(@class,'video_type')]/div/span[@class='type_tit'][contains(text(),'出品时间')]/following-sibling::span[1]/text()").get();
+            if(!StringUtils.isEmpty(publishYear))
+                videoModel.setPublishYear(Integer.valueOf(publishYear));
             videoModel.setType(node.xpath("//h1[@class='video_title_cn']/span[@class='type']/text()").get());
             videoModel.setSource(new Byte("1"));
             String score=node.xpath("//span[@class='score']/text()").get();

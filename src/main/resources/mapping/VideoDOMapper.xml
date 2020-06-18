@@ -18,6 +18,8 @@
     <result column="type" jdbcType="VARCHAR" property="type" />
     <result column="tags" jdbcType="VARCHAR" property="tags" />
     <result column="score" jdbcType="DOUBLE" property="score" />
+    <result column="publish_year" jdbcType="INTEGER" property="publishYear" />
+
   </resultMap>
   <sql id="Base_Column_List">
     <!--
@@ -26,7 +28,7 @@
       This element was generated on Sat May 23 20:57:03 CST 2020.
     -->
     id, name, name2, detail_url_crc, detail_url, image, description, source, type, tags, 
-    score
+    score,publish_year
   </sql>
   <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
     <!--
@@ -57,11 +59,11 @@
     insert into video (id, name, name2, 
       detail_url_crc, detail_url, image, 
       description, source, type, 
-      tags, score)
+      tags, score, publish_year)
     values (#{id,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR}, #{name2,jdbcType=VARCHAR}, 
       #{detailUrlCrc,jdbcType=BIGINT}, #{detailUrl,jdbcType=VARCHAR}, #{image,jdbcType=VARCHAR}, 
       #{description,jdbcType=VARCHAR}, #{source,jdbcType=TINYINT}, #{type,jdbcType=VARCHAR}, 
-      #{tags,jdbcType=VARCHAR}, #{score,jdbcType=DOUBLE})
+      #{tags,jdbcType=VARCHAR}, #{score,jdbcType=DOUBLE},#{publishYear,jdbcType=INTEGER})
   </insert>
   <insert id="insertSelective" parameterType="chj.idler.dataobject.VideoDO" useGeneratedKeys="true" keyProperty="id">
     <!--
@@ -104,6 +106,9 @@
       <if test="score != null">
         score,
       </if>
+      <if test="publishYear != null">
+        publish_year,
+      </if>
     </trim>
     <trim prefix="values (" suffix=")" suffixOverrides=",">
       <if test="id != null">
@@ -138,6 +143,9 @@
       </if>
       <if test="score != null">
         #{score,jdbcType=DOUBLE},
+      </if>
+      <if test="publishYear != null">
+        #{publishYear,jdbcType=INTEGER},
       </if>
     </trim>
   </insert>
@@ -179,6 +187,9 @@
       <if test="score != null">
         score = #{score,jdbcType=DOUBLE},
       </if>
+      <if test="publishYear != null">
+        publish_year = #{publishYear,jdbcType=INTEGER},
+      </if>
     </set>
     where id = #{id,jdbcType=INTEGER}
   </update>
@@ -198,7 +209,8 @@
       source = #{source,jdbcType=TINYINT},
       type = #{type,jdbcType=VARCHAR},
       tags = #{tags,jdbcType=VARCHAR},
-      score = #{score,jdbcType=DOUBLE}
+      score = #{score,jdbcType=DOUBLE},
+      publish_year = #{publishYear,jdbcType=INTEGER}
     where id = #{id,jdbcType=INTEGER}
   </update>
 

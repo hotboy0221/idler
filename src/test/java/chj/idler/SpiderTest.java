@@ -5,6 +5,7 @@ import chj.idler.dao.UserDOMapper;
 import chj.idler.response.BusinessException;
 import chj.idler.rocketmq.MqProducer;
 import chj.idler.service.model.VideoModel;
+import chj.idler.service.spider.iqiyi.IqiyiVideoProcessor;
 import chj.idler.util.EmailUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.rocketmq.client.exception.MQBrokerException;
@@ -14,6 +15,10 @@ import org.junit.jupiter.api.Test;
 import org.quartz.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import us.codecraft.webmagic.Page;
+import us.codecraft.webmagic.Site;
+import us.codecraft.webmagic.Spider;
+import us.codecraft.webmagic.processor.PageProcessor;
 
 import javax.mail.MessagingException;
 
@@ -37,17 +42,16 @@ class SpiderTest {
     }
     @Test
     void mai3n() throws  JsonProcessingException, MQClientException,InterruptedException, RemotingException, MQBrokerException{
-        VideoModel videoModel=new VideoModel();
-        videoModel.setName("哈哈1");
-        videoModel.setId(100186);
 
-        Thread.sleep(20000);
     }
 
     @Test
     void main2()throws Exception {
+        System.out.println(Thread.currentThread().getName());
         long t1=System.currentTimeMillis();
-        videoController.search("https://v.qq.com/x/cover/ipmc5u3dwb48mv2/f0020pa88so.html");
+//        videoController.search("https://v.qq.com/x/cover/mzc002008ve9hgc.html");
+        videoController.search("https://www.iqiyi.com/v_19rxo0pcu4.html");
+//        Spider.create(new IqiyiVideoProcessor()).addUrl("https://www.iqiyi.com/v_19rxo0pcu4.html").thread(1).run();
         long t2=System.currentTimeMillis();
         System.out.println(t2-t1);
         System.out.println((t2-t1)/1000);
@@ -61,6 +65,4 @@ class SpiderTest {
     @Test
     void main4()throws BusinessException{
     }
-
-
 }

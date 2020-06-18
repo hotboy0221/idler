@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+//一个影视的每一集
 public class TcAllEpisodeProcessor extends TcProcessor implements PageProcessor {
     private List<EpisodeDO> episodeDOList = new ArrayList<>();
     @Override

@@ -23,6 +23,8 @@ public class VideoVO {
     private Double score;
     //视频来源，0未知，1腾讯，2爱奇艺，3优酷
     private Byte source;
+    //出品时间
+    private Integer publishYear;
     //是否完结
     private Byte finish;
     //0正常，1预告，2vip
@@ -37,4 +39,5 @@ public class VideoVO {
     private String picture;
     //是否订阅通知
     private Byte sub;
+
 }
