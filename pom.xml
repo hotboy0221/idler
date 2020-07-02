@@ -81,7 +81,7 @@
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <scope>runtime</scope>
-            <version>5.1.41</version>
+            <version>8.0.16</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -177,7 +177,7 @@
                     <dependency>
                         <groupId>mysql</groupId>
                         <artifactId>mysql-connector-java</artifactId>
-                        <version>5.1.41</version>
+                        <version>8.0.16</version>
                     </dependency>
                 </dependencies>
                 <executions>
