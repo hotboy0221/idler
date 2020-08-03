@@ -80,8 +80,13 @@ public class IqiyiVideoProcessor extends IqiyiProcessor implements PageProcessor
             videoModel.setCreateTime(System.currentTimeMillis()/1000);
             if(videoModel.getType().equals("综艺")){
                 JSONArray episodes=(JSONArray)((JSONObject)page.getJson().toObject(JSONObject.class).get("data")).get(String.valueOf(videoModel.getPublishYear()));
-                JSONObject episode=(JSONObject) episodes.get(episodes.size()-1);
-
+                JSONObject jsonObject=(JSONObject) episodes.get(0);
+                videoModel.setTitle((String)jsonObject.get("name"));
+                videoModel.setUrl((String)jsonObject.get("playUrl"));
+                videoModel.setStatus((Byte)(jsonObject.get("payMark")));
+                videoModel.setNow(episodes.size());
+                videoModel.setPicture((String)jsonObject.get("imageUrl"));
+                videoModel.setCreateTime(System.currentTimeMillis()/1000);
             }else{
 
             }
